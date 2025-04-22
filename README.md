@@ -30,4 +30,4 @@ You can preview the application here: [Live Demo](https://products-hazel-alpha.v
 ## Acknowledgements
 
 Thank you for checking out this project!  
-Created with ❤️ by [Luong Van Trieu].
+Created with ❤️ by Luong Van Trieu.
