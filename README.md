@@ -23,6 +23,10 @@ npm install
 npm run dev
 ```
 
+## Preview
+
+You can preview the application here: [Live Demo](https://products-hazel-alpha.vercel.app/)
+
 ## Acknowledgements
 
 Thank you for checking out this project!  
