@@ -1,8 +1,7 @@
-import { useEffect } from "react";
-import { useInView } from "react-intersection-observer";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { fetchProducts, searchProducts } from "../apis/productApi";
-import ProductCard from "./ProductCard";
+import { useMemo } from "react";
+import { useInfiniteProducts, useSearchProducts, useInfiniteScroll } from "../hooks";
+import { ProductCard, ProductSkeleton } from "./";
+import { UI_CONSTANTS } from "../constants";
 
 type ProductListProps = {
   search: string;
@@ -14,44 +13,50 @@ function ProductList({ search }: ProductListProps) {
     fetchNextPage,
     hasNextPage,
     isLoading: isLoadingProducts,
-  } = useInfiniteQuery({
-    queryKey: ["products"],
-    queryFn: ({ pageParam = 0 }) => fetchProducts(pageParam),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) =>
-      lastPage.skip + lastPage.products.length < lastPage.total
-        ? lastPage.skip + lastPage.products.length
-        : undefined,
+    error: infiniteError,
+  } = useInfiniteProducts();
+
+  const { 
+    data: searchData, 
+    isLoading: isLoadingSearch,
+    error: searchError,
+  } = useSearchProducts(search);
+
+  const isSearchMode = !!search;
+  const isLoading = isSearchMode ? isLoadingSearch : isLoadingProducts;
+  const error = isSearchMode ? searchError : infiniteError;
+
+  const { ref } = useInfiniteScroll({
+    hasNextPage: hasNextPage ?? false,
+    isLoading,
+    isSearchMode,
+    fetchNextPage,
   });
 
-  const { data: searchData, isLoading: isLoadingSearch } = useQuery({
-    queryKey: ["search", search],
-    queryFn: () => searchProducts(search),
-    enabled: !!search,
-  });
-
-  const { ref, inView } = useInView();
-
-  useEffect(() => {
-    if (inView && hasNextPage && !search) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, fetchNextPage, search]);
-
-  const products = search
-    ? searchData?.products ?? []
-    : infiniteData?.pages.flatMap((page) => page.products) ?? [];
-
-  const isLoading = search ? isLoadingSearch : isLoadingProducts;
+  const products = useMemo(() => {
+    return isSearchMode
+      ? searchData?.products ?? []
+      : infiniteData?.pages.flatMap((page) => page.products) ?? [];
+  }, [isSearchMode, searchData, infiniteData]);
 
   const renderContent = () => {
-    if (isLoading) {
-      return <div className="col-span-full text-center">Loading...</div>;
+    if (error) {
+      return (
+        <div className="col-span-full text-center text-red-600">
+          <p>Error loading products. Please try again.</p>
+        </div>
+      );
     }
 
-    if (products.length === 0) {
+    if (isLoading && products.length === 0) {
+      return <ProductSkeleton count={8} />;
+    }
+
+    if (products.length === 0 && !isLoading) {
       return (
-        <div className="col-span-full text-center">No products found!</div>
+        <div className="col-span-full text-center text-gray-600">
+          {UI_CONSTANTS.NO_PRODUCTS_TEXT}
+        </div>
       );
     }
 
@@ -63,8 +68,11 @@ function ProductList({ search }: ProductListProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
       {renderContent()}
-      {!search && !isLoading && products.length > 0 && (
+      {!isSearchMode && !isLoading && products.length > 0 && (
         <div ref={ref} className="h-10 col-span-full" />
+      )}
+      {!isSearchMode && isLoading && products.length > 0 && (
+        <ProductSkeleton count={4} />
       )}
     </div>
   );

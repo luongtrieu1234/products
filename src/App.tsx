@@ -1,15 +1,15 @@
-import { useState } from "react";
-import SearchInput from "./components/SearchInput";
-import ProductList from "./components/ProductList";
-import useDebounce from "./hooks/useDebounce";
+import { useState, useCallback } from "react";
+import { SearchInput, ProductList } from "./components";
+import { useDebounce } from "./hooks";
+import { API_CONSTANTS } from "./constants";
 
 function App() {
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 600);
+  const debouncedSearch = useDebounce(search, API_CONSTANTS.DEBOUNCE_DELAY);
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
-  };
+  }, []);
 
   return (
     <div className="p-4 max-w-6xl mx-auto flex flex-col items-center justify-center min-h-screen">
